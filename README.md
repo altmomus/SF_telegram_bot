@@ -1,1 +1,1 @@
-# SF_telegram_bot
+Solving practical tasks of the school SkillFactory
