@@ -5,6 +5,7 @@ from extensions import RequestsToApi
 
 bot = telebot.TeleBot(TOKEN)
 
+
 class APIException(Exception):
     def __init__(self, text):
         self.txt = text
@@ -15,7 +16,8 @@ def start_or_help_bot(message):
     bot.send_message(message.chat.id, "Здравствуйте, при вводе команды /values, выведется информация обо всех валютах.\n"
                                       "Отправьте сообщение в виде <имя валюты цену которой вы хотите узнать> "
                                       "<имя валюты в которой вам надо узнать цену первой валюты> <количество первой валюты>. "
-                                      "Пример: USD RUB 1 или EUR RUB 1.")
+                                      "Пример: 'USD RUB 1' или 'EUR RUB 1'.\n"
+                                      "Названия валют необходимо вводить ЗАГЛАВНЫМИ буквами!")
 
 
 @bot.message_handler(commands=["values"])
@@ -29,12 +31,21 @@ def get_information_about_values(message):
 @bot.message_handler(content_types="text")
 def convert_values(message):
     user_data_for_converting = message.text.split(" ")
-
+    if len(user_data_for_converting) < 3:
+        bot.send_message(message.chat.id, "Вы ввели сообщение, которое не соответствует данному шаблону:\n"
+                                          "<имя валюты цену которой вы хотите узнать> <имя валюты в которой вам надо "
+                                          "узнать цену первой валюты> <количество первой валюты>")
     try:
         if user_data_for_converting[0] not in ["RUB", "EUR", "USD"]:
-            raise APIException("Вы неверно ввели первую валюту")
+            if user_data_for_converting[0] in ["rub", "eur", "usd"]:
+                raise APIException("Вы неверно ввели первую валюту, необходимо вводить ЗАГЛАВНЫМИ буквами")
+            else:
+                return APIException("Первое слово не название валюты")
         elif user_data_for_converting[1] not in ["RUB", "EUR", "USD"]:
-            raise APIException("Вы неверно ввели вторую валюту")
+            if user_data_for_converting[1] in ["rub", "eur", "usd"]:
+                raise APIException("Вы неверно ввели вторую валюту, необходимо вводить ЗАГЛАВНЫМИ буквами")
+            else:
+                return APIException("Второе слово не название валюты")
 
         int(user_data_for_converting[2])  # выдаст ValueError если не число
 
@@ -45,7 +56,9 @@ def convert_values(message):
     except APIException as txt:
         bot.send_message(message.chat.id, f"{txt}")
     except ValueError:
-        bot.send_message(message.chat.id, "Вы не ввели количество валюты")
+        bot.send_message(message.chat.id, "Вы не ввели количество валюты или вместо цифр вы ввели слово")
+    except IndexError:
+        bot.send_message(message.chat.id, "Неизвестная ошибка, пожалуйста проверьте свой запрос он не верен.")
 
 
 bot.polling()
